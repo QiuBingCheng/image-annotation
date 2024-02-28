@@ -5,7 +5,12 @@ export default function Label() {
     const canvasRef = useRef(null);
     const imageRef = useRef(null);
 
-    const [loadedImg, setLoadedImg] = useState(false);
+    const [selectedOption, setSelectedOption] = useState(null);
+    const [items, setItems] = useState([]);
+    const [imageUrl, setImageUrl] = useState("/images/1.png");
+
+    // image 
+    const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
 
     // event mode 
     const [editMode, setEditMode] = useState(false);
@@ -16,34 +21,45 @@ export default function Label() {
     const [resizing, setResizing] = useState(false);
 
     // Rect attributes
-    const [rectCoords, setRectCoords] = useState({ x: 0, y: 0, width: 0, height: 0 });
+    // current rect
+    const initialRectcoords = { x: 0, y: 0, width: 0, height: 0 }
+    const [rectCoords, setRectCoords] = useState(initialRectcoords);
+
+    // labeled rect
+    const [rectCoordsArray, setRectCoordsArray] = useState([]);
     const [startPosition, setStartPosition] = useState({ x: 0, y: 0 });
     const [currentPosition, setCurrentPosition] = useState({ x: 0, y: 0 });
 
+    const handleSelectChange = (event) => {
+
+        setSelectedOption(event.target.value);
+    }
+
+    const handleImageLoad = () => {
+        console.log("handleImageLoad")
+        const image = imageRef.current;
+        console.log(image)
+        setImageSize({ "width": image.naturalWidth, "height": image.naturalHeight });
+        console.log(image)
+        setTimeout(drawImage, 100);
+    };
+
     const drawImage = () => {
         console.log("drawImage")
+        console.log(imageSize)
+
         const canvas = canvasRef.current;
         const image = imageRef.current;
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        if (!loadedImg) {
-            image.onload = () => {
-                ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-                setLoadedImg(true);
-                return;
-            };
-        }
         ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+        console.log(canvas)
+        console.log(image)
     }
 
-    const drawRect = () => {
+    const drawRect = (rectCoords) => {
         console.log("drawRect");
-        console.log(rectCoords);
-
-        if (rectCoords.width == 0)
-            return;
-
         const canvas = canvasRef.current;
         const ctx = canvas.getContext('2d');
 
@@ -52,15 +68,24 @@ export default function Label() {
         ctx.strokeStyle = 'red';
         ctx.lineWidth = 1;
         ctx.stroke();
+    }
 
+    const drawRects = () => {
+        console.log("drawRects");
+        if (rectCoordsArray.length == 0)
+            return;
+
+        for (let index = 0; index < rectCoordsArray.length; index++) {
+            const rect = rectCoordsArray[index];
+            drawRect(rect);
+        }
         // control rect
         //ctx.fillStyle = 'blue';
         //ctx.fillRect(rectCoords.x + rectCoords.width - 5, rectCoords.y + rectCoords.height - 5, 10, 10);
     }
 
     useEffect(() => {
-        drawImage();
-        drawRect();
+        drawRects();
     }, [])
 
     const handleMouseDown = (event) => {
@@ -96,9 +121,17 @@ export default function Label() {
         const { x: currentX, y: currentY } = currentPosition;
         const deltaX = currentX - startX;
         const deltaY = currentY - startY;
-        const x = deltaX > 0 ? startX : currentX
-        const y = deltaY > 0 ? startY : currentY
-        setRectCoords({ x: x, y: y, width: Math.abs(deltaX), height: Math.abs(deltaY) });
+        const x = Math.round(deltaX > 0 ? startX : currentX)
+        const y = Math.round(deltaY > 0 ? startY : currentY)
+
+        const width = Math.round(Math.abs(deltaX));
+        const height = Math.round(Math.abs(deltaY));
+
+        const newRectCoords = { x: x, y: y, width: width, height: height }
+        setRectCoordsArray(prevArray => [...prevArray, newRectCoords]);
+
+        const labelStr = `${selectedOption} ${x},${y},${width},${height}`
+        setItems(prevArray => [...prevArray, labelStr])
     }
 
     const handleMouseUp = () => {
@@ -107,6 +140,9 @@ export default function Label() {
         if (bounding) {
             createBoundingBox();
         }
+
+        // initial
+        setRectCoords(initialRectcoords);
 
         setDragging(false);
         setResizing(false);
@@ -124,7 +160,7 @@ export default function Label() {
             const offsetY = event.clientY - rect.top;
             setCurrentPosition({ x: offsetX, y: offsetY });
             drawImage();
-            drawRect();
+            drawRects();
             drawBoundingBox();
             return;
         }
@@ -190,30 +226,40 @@ export default function Label() {
     return (
         <div>
             <div>
-                <canvas
-                    ref={canvasRef}
-                    width={500}
-                    height={500}
-                    onMouseDown={handleMouseDown}
-                    onMouseUp={handleMouseUp}
-                    onMouseMove={handleMouseMove}
-                />
-                <img
-                    ref={imageRef}
-                    src="/images/1.png"
-                    alt="Your Image"
-                    style={{ width: '500px', height: '500px', display: 'none' }}
-                />
-
-                <div style={{ left: 0 }}>
-                    <p>類別標註 {rectCoords.x}, {rectCoords.y}, {rectCoords.width}, {rectCoords.height}</p>
-                </div>
-                <div>
+                <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
                     <button onClick={EditTrigger}>Edit Shape</button>
+                    <button onClick={BoundingTrigger}>Bounding Box</button>
+                    <select onChange={handleSelectChange}>
+                        <option value="">Choose Label</option>
+                        <option value="ear">ear</option>
+                        <option value="eye">eye</option>
+                        <option value="nose">nose</option>
+                    </select>
+
                 </div>
                 <div>
-                    <button onClick={BoundingTrigger}>Bounding Box</button>
+                    <canvas
+                        ref={canvasRef}
+                        width={imageSize.width}
+                        height={imageSize.height}
+                        onMouseDown={handleMouseDown}
+                        onMouseUp={handleMouseUp}
+                        onMouseMove={handleMouseMove}
+                    />
+                    <img
+                        ref={imageRef}
+                        src={imageUrl}
+                        alt="Your Image"
+                        onLoad={handleImageLoad}
+                        style={{ display: 'none' }}
+                    />
+                    <ul>
+                        {items.map((item, index) => (
+                            <li key={index}>{item}</li>
+                        ))}
+                    </ul>
                 </div>
+
             </div>
         </div>
     )
