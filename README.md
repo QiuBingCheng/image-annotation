@@ -5,4 +5,3 @@
 
 ## Create Label
 ![alt text](screenshot/label.png)
-![alt text](image-1.png)
