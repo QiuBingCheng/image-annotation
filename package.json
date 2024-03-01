@@ -9,6 +9,7 @@
     "eject": "react-scripts eject"
   },
   "dependencies": {
+    "ag-grid-react": "^31.1.1",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "react-router-dom": "^6.22.1",
@@ -25,8 +26,5 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  },
-  "devDependencies": {
-    "typescript": "^5.3.3"
   }
 }

@@ -1,9 +1,49 @@
 import React, { useRef, useEffect, useState } from 'react';
 import './home.css'; // 引入 CSS 文件
+import { AgGridReact } from 'ag-grid-react'; // AG Grid Component
+import "ag-grid-community/styles/ag-grid.css"; // Mandatory CSS required by the grid
+import "ag-grid-community/styles/ag-theme-quartz.css"; // Optional Theme applied to the grid
 
 export default function Label() {
     const canvasRef = useRef(null);
     const imageRef = useRef(null);
+
+    // Row Data: The data to be displayed.
+    const rowHeight = 30;
+
+    // Label DataGrid 
+    const [rowData, setRowData] = useState([
+        { label: "ear", x: 100, y: 100, width: 104, height: 200, button: "" },
+        { label: "nose", x: 100, y: 100, width: 104, height: 200, button: "" }
+    ]);
+
+    const CustomButtonComponent = (props) => {
+        return <button onClick={() => window.alert('clicked')}>Delete</button>;
+    };
+
+    // Column Definitions: Defines the columns to be displayed.
+    const [colDefs, setColDefs] = useState([
+        { field: "label", width: 120 },
+        { field: "x", width: 70 },
+        { field: "y", width: 70 },
+        { field: "width", width: 80 },
+        { field: "height", width: 80 },
+        { field: "button", width: 80, cellRenderer: CustomButtonComponent },
+    ]);
+
+    // Image Selector DataGrid 
+    const [imageRowData, setImageData] = useState([
+        { name: "cat001.png", label: "Yes" },
+        { name: "dog002.png", label: "No" }
+
+    ]);
+
+    // Column Definitions: Defines the columns to be displayed.
+    const [imageColDefs, setImageColDefs] = useState([
+        { field: "name" },
+        { field: "label" },
+    ]);
+
 
     const [selectedOption, setSelectedOption] = useState(null);
     const [items, setItems] = useState([]);
@@ -225,19 +265,35 @@ export default function Label() {
 
     return (
         <div>
-            <div>
-                <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
-                    <button onClick={EditTrigger}>Edit Shape</button>
-                    <button onClick={BoundingTrigger}>Bounding Box</button>
-                    <select onChange={handleSelectChange}>
-                        <option value="">Choose Label</option>
-                        <option value="ear">ear</option>
-                        <option value="eye">eye</option>
-                        <option value="nose">nose</option>
-                    </select>
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
 
-                </div>
-                <div>
+                <button className="square-button" onClick={EditTrigger}>
+                    <img className="action-image" src="/images/edit.svg" border="0" />
+                    <span className="button-text">Edit</span>
+                </button>
+                <button className="square-button" onClick={BoundingTrigger}>
+                    <img className="action-image" src="/images/bounding.svg" border="0" style={{ width: '30px', height: '30px' }} />
+                    <span className="button-text">Bound</span>
+                </button>
+                <button className="square-button" onClick={BoundingTrigger}>
+                    <img className="action-image" src="/images/gallery.png" border="0" style={{ width: '30px', height: '30px' }} />
+                    <span className="button-text">Import</span>
+                </button>
+                <button className="square-button" onClick={BoundingTrigger}>
+                    <img className="action-image" src="/images/setting.svg" border="0" style={{ width: '30px', height: '30px' }} />
+                    <span className="button-text">Setting</span>
+                </button>
+
+                <select onChange={handleSelectChange}>
+                    <option value="">Choose Label</option>
+                    <option value="ear">ear</option>
+                    <option value="eye">eye</option>
+                    <option value="nose">nose</option>
+                </select>
+            </div>
+            <hr />
+            <div style={{ display: 'flex', justifyContent: 'space-between', height: '600px' }}>
+                <div style={{ margin: '5px' }}>
                     <canvas
                         ref={canvasRef}
                         width={imageSize.width}
@@ -253,14 +309,31 @@ export default function Label() {
                         onLoad={handleImageLoad}
                         style={{ display: 'none' }}
                     />
-                    <ul>
-                        {items.map((item, index) => (
-                            <li key={index}>{item}</li>
-                        ))}
-                    </ul>
+                    <p>File name: cat001.png</p>
+                </div>
+
+                <div style={{ marginLeft: '15px', marginRight: 'auto' }}>
+                    <p style={{ margin: '0px' }}>Label</p>
+                    <div className={"ag-theme-quartz"} style={{ width: '600px', height: '120px' }}>
+                        <AgGridReact
+                            rowData={rowData}
+                            columnDefs={colDefs}
+                            rowHeight={rowHeight}
+                        />
+                    </div>
+                    <p style={{ marginTop: '10px', marginBottom: '0px' }}>Image Selector</p>
+                    <div className={"ag-theme-quartz"} style={{ width: '600px', height: '120px' }}>
+                        <AgGridReact
+                            rowData={imageRowData}
+                            columnDefs={imageColDefs}
+                            rowHeight={rowHeight}
+                            autoSizeStrategy={{ type: 'fitGridWidth' }}
+                        />
+                    </div>
                 </div>
 
             </div>
+
         </div>
     )
 }
