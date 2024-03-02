@@ -8,6 +8,7 @@ import * as service from './service/myService'
 // Global vars
 
 let rectCoordsArray = [];
+let labels = [];
 
 export default function Label() {
     const canvasRef = useRef(null);
@@ -20,18 +21,44 @@ export default function Label() {
 
     // Label DataGrid 
     const [rowData, setRowData] = useState([]);
-    const CustomButtonComponent = (props) => {
-        return <button onClick={() => window.alert('clicked')}>Delete</button>;
+
+    const handleDeleteClick = (rowId) => {
+        console.log("handleDeleteClick")
+        rectCoordsArray.splice(rowId - 1, 1);
+        handleRemoveRow(rowId);
+        handleReorderIDs();
+        drawImage()
+        drawRects()
+    };
+    const handleReorderIDs = () => {
+        const reorderedRows = rowData.map((row, index) => ({ ...row, id: index + 1 }));
+        setRowData(reorderedRows);
+    };
+    const CustomCellRenderer = ({ data }) => {
+        console.log("CustomCellRenderer")
+        console.log(data)
+        return (
+            <button style={{ background: 'transparent', border: 'none' }}><img src="./images/delete.png" style={{ height: '20px', width: '20px' }} onClick={() => handleDeleteClick(data.id)} /></button>
+        );
+    };
+
+
+    const handleRemoveRow = (idToRemove) => {
+        const updatedRows = rowData.filter(row => row.id !== idToRemove);
+        setRowData(updatedRows);
     };
 
     // Column Definitions: Defines the columns to be displayed.
     const [colDefs, setColDefs] = useState([
+        { field: "id", width: 50 },
         { field: "label", width: 120 },
         { field: "x", width: 70 },
         { field: "y", width: 70 },
         { field: "width", width: 80 },
         { field: "height", width: 80 },
-        { field: "button", width: 80, cellRenderer: CustomButtonComponent },
+        {
+            field: "action", width: 90, cellRenderer: CustomCellRenderer
+        }
     ]);
 
     // Image Selector DataGrid 
@@ -96,16 +123,24 @@ export default function Label() {
         console.log(image)
     }
 
-    const drawRect = (rectCoords) => {
+    const drawRect = (label, rectCoords) => {
         console.log("drawRect");
-        const canvas = canvasRef.current;
-        const ctx = canvas.getContext('2d');
+        let canvas = canvasRef.current;
+        let ctx = canvas.getContext('2d');
 
         ctx.beginPath();
         ctx.rect(rectCoords.x, rectCoords.y, rectCoords.width, rectCoords.height);
         ctx.strokeStyle = 'red';
         ctx.lineWidth = 1;
         ctx.stroke();
+
+        //
+        canvas = canvasRef.current;
+        ctx = canvas.getContext('2d');
+        ctx.fillStyle = 'green';
+        ctx.font = '16px Arial';
+        ctx.beginPath();
+        ctx.fillText(label, rectCoords.x + 5, rectCoords.y + 15);
     }
 
     const drawRects = () => {
@@ -115,7 +150,9 @@ export default function Label() {
 
         for (let index = 0; index < rectCoordsArray.length; index++) {
             const rect = rectCoordsArray[index];
-            drawRect(rect);
+            const label = labels[index];
+            console.log(label, rect)
+            drawRect(label, rect);
         }
     }
 
@@ -197,8 +234,13 @@ export default function Label() {
         if (bounding) {
             const boundingBox = getBoundingBox();
             rectCoordsArray.push(boundingBox)
+            labels.push(selectedOption)
             console.log(rectCoordsArray)
             addRowData(selectedOption, boundingBox);
+            console.log(rowData);
+
+            drawImage();
+            drawRects();
         }
 
         // initial
@@ -319,7 +361,7 @@ export default function Label() {
             <div style={{ display: 'flex', justifyContent: 'space-between', height: '550px' }}>
 
                 < div style={{ width: '550px' }}>
-                    <p style={{ textAlign: 'center', margin: '0px', border: '1px solid #BDBDBD', fontSize: "18px" }}>cat001.png</p >
+                    <p style={{ textAlign: 'center', margin: '0px', border: '1px solid #BDBDBD', fontSize: "18px" }}>cat.png</p >
 
                     {/* Canvas */}
                     <div style={{ margin: '0px', backgroundColor: '#F3F3F3' }}>
