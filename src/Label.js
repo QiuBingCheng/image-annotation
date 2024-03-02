@@ -13,6 +13,8 @@ export default function Label() {
     const canvasRef = useRef(null);
     const imageRef = useRef(null);
 
+    //=========== Data Grid ===========//
+
     // Row Data: The data to be displayed.
     const rowHeight = 30;
 
@@ -41,10 +43,10 @@ export default function Label() {
         { field: "labeled", filter: 'agTextColumnFilter' },
     ]);
 
+    //=========== Data Grid ===========//
 
     const [selectedOption, setSelectedOption] = useState(null);
-    const [items, setItems] = useState([]);
-    const [imageUrl, setImageUrl] = useState("/images/cat2.png");
+    const [imageUrl, setImageUrl] = useState("/images/cat.png");
 
     // image 
     const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
@@ -261,6 +263,12 @@ export default function Label() {
         setEditMode(true);
     }
 
+    const onRowClicked = (event) => {
+        console.log('Row clicked:', event.data);
+        const imagePath = service.getImagePath(event.data.name);
+        setImageUrl(imagePath)
+    };
+
     const drawBoundingBox = () => {
         const canvas = canvasRef.current;
         const ctx = canvas.getContext('2d');
@@ -352,6 +360,7 @@ export default function Label() {
                                 rowHeight={rowHeight}
                                 autoSizeStrategy={{ type: 'fitGridWidth' }}
                                 enableFilter={true}
+                                onRowClicked={onRowClicked}
                             />
                         </div>
                     </div>
