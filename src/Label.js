@@ -64,7 +64,7 @@ export default function Label() {
             { field: "width", width: 80, editable: true },
             { field: "height", width: 80, editable: true },
             {
-                field: "action", width: 90, cellRenderer: CustomCellRenderer
+                field: "action", width: 75, cellRenderer: CustomCellRenderer
             }
         ])
     }
@@ -80,7 +80,9 @@ export default function Label() {
 
     //=========== Data Grid ===========//
 
-    const [selectedOption, setSelectedOption] = useState(null);
+    const [selectedOption, setSelectedOption] = useState("");
+    const [options, setOptions] = useState([]);
+
     const [imageUrl, setImageUrl] = useState("/images/cat.png");
 
     // image 
@@ -168,11 +170,11 @@ export default function Label() {
         console.log("Init Data")
         const labels = service.getLabels();
         setColDefsWithParas(labels);
+        setOptions(labels)
+        setSelectedOption(labels[0])
 
         const imageList = service.getImageData();
         setImageData(imageList);
-
-
 
     }
     useEffect(() => {
@@ -223,7 +225,6 @@ export default function Label() {
         return newRectCoords;
     }
 
-    // 添加新的行数据的函数
     const addRowData = (label, boundingBox) => {
         const newRowData = [
             ...rowData,
@@ -237,7 +238,6 @@ export default function Label() {
             }
         ];
 
-        // 使用 setRowData 更新行数据
         setRowData(newRowData);
     };
 
@@ -341,10 +341,23 @@ export default function Label() {
 
     };
 
+    const cellChangedEvent = (event) => {
+        const index = event.data.id - 1
+
+        rectCoordsArray[index].width = event.data.width
+        rectCoordsArray[index].height = event.data.height
+        rectCoordsArray[index].x = event.data.x
+        rectCoordsArray[index].y = event.data.y
+        labels[index] = event.data.label
+
+        drawImage()
+        drawRects()
+    }
+
     return (
         <div>
             {/* Function area */}
-            <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
 
                 <button className="square-button" onClick={EditTrigger}>
                     <img className="action-image" src="/images/edit.svg" border="0" />
@@ -362,13 +375,14 @@ export default function Label() {
                     <img className="action-image" src="/images/setting.svg" border="0" style={{ width: '30px', height: '30px' }} />
                     <span className="button-text">Setting</span>
                 </button>
-
-                <select onChange={handleSelectChange}>
-                    <option value="">Choose Label</option>
-                    <option value="ear">ear</option>
-                    <option value="eye">eye</option>
-                    <option value="nose">nose</option>
-                </select>
+                <div>
+                    <p style={{ margin: '0px', marginBottom: '3px' }}>Label:</p>
+                    <select style={{ width: '100px', height: '30px' }} onChange={handleSelectChange}>
+                        {options.map((option, index) => (
+                            <option key={index} value={option}>{option}</option>
+                        ))}
+                    </select>
+                </div>
             </div>
             <hr />
             <div style={{ display: 'flex', justifyContent: 'space-between', height: '550px' }}>
@@ -405,6 +419,7 @@ export default function Label() {
                                 rowData={rowData}
                                 columnDefs={colDefs}
                                 rowHeight={rowHeight}
+                                onCellValueChanged={cellChangedEvent}
                             />
                         </div>
                         <p style={{ marginTop: '10px', marginBottom: '0px', border: '1px solid #BDBDBD', fontSize: "18px" }}>Images</p>
