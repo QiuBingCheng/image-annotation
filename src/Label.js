@@ -49,17 +49,25 @@ export default function Label() {
     };
 
     // Column Definitions: Defines the columns to be displayed.
-    const [colDefs, setColDefs] = useState([
-        { field: "id", width: 50 },
-        { field: "label", width: 120 },
-        { field: "x", width: 70 },
-        { field: "y", width: 70 },
-        { field: "width", width: 80 },
-        { field: "height", width: 80 },
-        {
-            field: "action", width: 90, cellRenderer: CustomCellRenderer
-        }
-    ]);
+    const [colDefs, setColDefs] = useState([])
+
+    const setColDefsWithParas = (labels) => {
+        setColDefs([
+            { field: "id", width: 50 },
+            {
+                field: "label", width: 120, editable: true, cellEditor: 'agSelectCellEditor', cellEditorParams: {
+                    values: labels,
+                }
+            },
+            { field: "x", width: 70, editable: true },
+            { field: "y", width: 70, editable: true },
+            { field: "width", width: 80, editable: true },
+            { field: "height", width: 80, editable: true },
+            {
+                field: "action", width: 90, cellRenderer: CustomCellRenderer
+            }
+        ])
+    }
 
     // Image Selector DataGrid 
     const [imageRowData, setImageData] = useState([])
@@ -158,8 +166,13 @@ export default function Label() {
 
     const initData = () => {
         console.log("Init Data")
+        const labels = service.getLabels();
+        setColDefsWithParas(labels);
+
         const imageList = service.getImageData();
         setImageData(imageList);
+
+
 
     }
     useEffect(() => {

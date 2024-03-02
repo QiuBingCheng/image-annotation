@@ -4,6 +4,11 @@ export function getImageData() {
         { "name": "cat.png", "labeled": "No" }
     ]
 }
+
+export function getLabels() {
+    return ['ear', 'eye', 'nose']
+}
+
 export function getImagePath(id) {
     switch (id) {
         case "dog.png":
