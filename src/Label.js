@@ -3,6 +3,11 @@ import './home.css'; // 引入 CSS 文件
 import { AgGridReact } from 'ag-grid-react'; // AG Grid Component
 import "ag-grid-community/styles/ag-grid.css"; // Mandatory CSS required by the grid
 import "ag-grid-community/styles/ag-theme-quartz.css"; // Optional Theme applied to the grid
+import * as service from './service/myService'
+
+// Global vars
+
+let rectCoordsArray = [];
 
 export default function Label() {
     const canvasRef = useRef(null);
@@ -12,11 +17,7 @@ export default function Label() {
     const rowHeight = 30;
 
     // Label DataGrid 
-    const [rowData, setRowData] = useState([
-        { label: "ear", x: 100, y: 100, width: 104, height: 200, button: "" },
-        { label: "nose", x: 100, y: 100, width: 104, height: 200, button: "" }
-    ]);
-
+    const [rowData, setRowData] = useState([]);
     const CustomButtonComponent = (props) => {
         return <button onClick={() => window.alert('clicked')}>Delete</button>;
     };
@@ -32,22 +33,18 @@ export default function Label() {
     ]);
 
     // Image Selector DataGrid 
-    const [imageRowData, setImageData] = useState([
-        { name: "cat001.png", label: "Yes" },
-        { name: "dog002.png", label: "No" }
-
-    ]);
+    const [imageRowData, setImageData] = useState([])
 
     // Column Definitions: Defines the columns to be displayed.
     const [imageColDefs, setImageColDefs] = useState([
-        { field: "name" },
-        { field: "label" },
+        { field: "name", filter: 'agTextColumnFilter' },
+        { field: "labeled", filter: 'agTextColumnFilter' },
     ]);
 
 
     const [selectedOption, setSelectedOption] = useState(null);
     const [items, setItems] = useState([]);
-    const [imageUrl, setImageUrl] = useState("/images/1.png");
+    const [imageUrl, setImageUrl] = useState("/images/cat2.png");
 
     // image 
     const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
@@ -66,7 +63,6 @@ export default function Label() {
     const [rectCoords, setRectCoords] = useState(initialRectcoords);
 
     // labeled rect
-    const [rectCoordsArray, setRectCoordsArray] = useState([]);
     const [startPosition, setStartPosition] = useState({ x: 0, y: 0 });
     const [currentPosition, setCurrentPosition] = useState({ x: 0, y: 0 });
 
@@ -119,13 +115,17 @@ export default function Label() {
             const rect = rectCoordsArray[index];
             drawRect(rect);
         }
-        // control rect
-        //ctx.fillStyle = 'blue';
-        //ctx.fillRect(rectCoords.x + rectCoords.width - 5, rectCoords.y + rectCoords.height - 5, 10, 10);
     }
 
+    const initData = () => {
+        console.log("Init Data")
+        const imageList = service.getImageData();
+        setImageData(imageList);
+
+    }
     useEffect(() => {
         drawRects();
+        initData();
     }, [])
 
     const handleMouseDown = (event) => {
@@ -156,7 +156,7 @@ export default function Label() {
         }
     };
 
-    const createBoundingBox = () => {
+    const getBoundingBox = () => {
         const { x: startX, y: startY } = startPosition;
         const { x: currentX, y: currentY } = currentPosition;
         const deltaX = currentX - startX;
@@ -168,17 +168,35 @@ export default function Label() {
         const height = Math.round(Math.abs(deltaY));
 
         const newRectCoords = { x: x, y: y, width: width, height: height }
-        setRectCoordsArray(prevArray => [...prevArray, newRectCoords]);
-
-        const labelStr = `${selectedOption} ${x},${y},${width},${height}`
-        setItems(prevArray => [...prevArray, labelStr])
+        return newRectCoords;
     }
+
+    // 添加新的行数据的函数
+    const addRowData = (label, boundingBox) => {
+        const newRowData = [
+            ...rowData,
+            {
+                id: rowData.length + 1,
+                label: label,
+                x: boundingBox.x,
+                y: boundingBox.y,
+                width: boundingBox.width,
+                height: boundingBox.height
+            }
+        ];
+
+        // 使用 setRowData 更新行数据
+        setRowData(newRowData);
+    };
 
     const handleMouseUp = () => {
         console.log("handleMouseUp")
 
         if (bounding) {
-            createBoundingBox();
+            const boundingBox = getBoundingBox();
+            rectCoordsArray.push(boundingBox)
+            console.log(rectCoordsArray)
+            addRowData(selectedOption, boundingBox);
         }
 
         // initial
@@ -258,13 +276,11 @@ export default function Label() {
         ctx.lineWidth = 1;
         ctx.stroke();
 
-        // 控制縮放點
-        // ctx.fillStyle = 'blue';
-        // ctx.fillRect(rectCoords.x + rectCoords.width - 5, rectCoords.y + rectCoords.height - 5, 10, 10);
     };
 
     return (
         <div>
+            {/* Function area */}
             <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
 
                 <button className="square-button" onClick={EditTrigger}>
@@ -292,48 +308,55 @@ export default function Label() {
                 </select>
             </div>
             <hr />
-            <div style={{ display: 'flex', justifyContent: 'space-between', height: '600px' }}>
-                <div style={{ margin: '5px' }}>
-                    <canvas
-                        ref={canvasRef}
-                        width={imageSize.width}
-                        height={imageSize.height}
-                        onMouseDown={handleMouseDown}
-                        onMouseUp={handleMouseUp}
-                        onMouseMove={handleMouseMove}
-                    />
-                    <img
-                        ref={imageRef}
-                        src={imageUrl}
-                        alt="Your Image"
-                        onLoad={handleImageLoad}
-                        style={{ display: 'none' }}
-                    />
-                    <p>File name: cat001.png</p>
-                </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', height: '550px' }}>
 
-                <div style={{ marginLeft: '15px', marginRight: 'auto' }}>
-                    <p style={{ margin: '0px' }}>Label</p>
-                    <div className={"ag-theme-quartz"} style={{ width: '600px', height: '120px' }}>
-                        <AgGridReact
-                            rowData={rowData}
-                            columnDefs={colDefs}
-                            rowHeight={rowHeight}
+                < div style={{ width: '550px' }}>
+                    <p style={{ textAlign: 'center', margin: '0px', border: '1px solid #BDBDBD', fontSize: "18px" }}>cat001.png</p >
+
+                    {/* Canvas */}
+                    <div style={{ margin: '0px', backgroundColor: '#F3F3F3' }}>
+                        <canvas
+                            ref={canvasRef}
+                            width={imageSize.width}
+                            height={imageSize.height}
+                            onMouseDown={handleMouseDown}
+                            onMouseUp={handleMouseUp}
+                            onMouseMove={handleMouseMove}
                         />
-                    </div>
-                    <p style={{ marginTop: '10px', marginBottom: '0px' }}>Image Selector</p>
-                    <div className={"ag-theme-quartz"} style={{ width: '600px', height: '120px' }}>
-                        <AgGridReact
-                            rowData={imageRowData}
-                            columnDefs={imageColDefs}
-                            rowHeight={rowHeight}
-                            autoSizeStrategy={{ type: 'fitGridWidth' }}
+                        <img
+                            ref={imageRef}
+                            src={imageUrl}
+                            alt="Your Image"
+                            onLoad={handleImageLoad}
+                            style={{ display: 'none' }}
                         />
                     </div>
                 </div>
 
+                {/* Tables */}
+                <div style={{ border: '1px solid #BDBDBD', marginLeft: '3px', marginRight: 'auto' }}>
+                    <div style={{ marginLeft: '5px' }}>
+                        <p style={{ margin: '0px', border: '1px solid #BDBDBD', fontSize: "18px" }}>Labels</p>
+                        <div className={"ag-theme-quartz"} style={{ width: '550px', height: '230px' }}>
+                            <AgGridReact
+                                rowData={rowData}
+                                columnDefs={colDefs}
+                                rowHeight={rowHeight}
+                            />
+                        </div>
+                        <p style={{ marginTop: '10px', marginBottom: '0px', border: '1px solid #BDBDBD', fontSize: "18px" }}>Images</p>
+                        <div className={"ag-theme-quartz"} style={{ width: '550px', height: '300px' }}>
+                            <AgGridReact
+                                rowData={imageRowData}
+                                columnDefs={imageColDefs}
+                                rowHeight={rowHeight}
+                                autoSizeStrategy={{ type: 'fitGridWidth' }}
+                                enableFilter={true}
+                            />
+                        </div>
+                    </div>
+                </div>
             </div>
-
-        </div>
+        </div >
     )
 }
