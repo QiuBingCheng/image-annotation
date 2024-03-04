@@ -22,26 +22,27 @@ export default function Label() {
     // Label DataGrid 
     const [rowData, setRowData] = useState([]);
 
+    const CustomCellRenderer = (props) => {
+        const deleteRow = () => {
+            console.log("deleteRow")
+            props.api.applyTransaction({ remove: [props.node.data] });
+        };
+
+        return <button style={{ background: 'transparent', border: 'none' }}> <img src="./images/delete.png" style={{ height: '20px', width: '20px' }} onClick={deleteRow} /></button>;
+    };
+
     const handleDeleteClick = (rowId) => {
-        console.log("handleDeleteClick")
         rectCoordsArray.splice(rowId - 1, 1);
         handleRemoveRow(rowId);
         handleReorderIDs();
         drawImage()
         drawRects()
     };
+
     const handleReorderIDs = () => {
         const reorderedRows = rowData.map((row, index) => ({ ...row, id: index + 1 }));
         setRowData(reorderedRows);
     };
-    const CustomCellRenderer = ({ data }) => {
-        console.log("CustomCellRenderer")
-        console.log(data)
-        return (
-            <button style={{ background: 'transparent', border: 'none' }}><img src="./images/delete.png" style={{ height: '20px', width: '20px' }} onClick={() => handleDeleteClick(data.id)} /></button>
-        );
-    };
-
 
     const handleRemoveRow = (idToRemove) => {
         const updatedRows = rowData.filter(row => row.id !== idToRemove);
@@ -63,9 +64,7 @@ export default function Label() {
             { field: "y", width: 70, editable: true },
             { field: "width", width: 80, editable: true },
             { field: "height", width: 80, editable: true },
-            {
-                field: "action", width: 75, cellRenderer: CustomCellRenderer
-            }
+            { field: "action", width: 75, cellRenderer: CustomCellRenderer }
         ])
     }
 
@@ -111,30 +110,20 @@ export default function Label() {
     }
 
     const handleImageLoad = () => {
-        console.log("handleImageLoad")
         const image = imageRef.current;
-        console.log(image)
         setImageSize({ "width": image.naturalWidth, "height": image.naturalHeight });
-        console.log(image)
         setTimeout(drawImage, 100);
     };
 
     const drawImage = () => {
-        console.log("drawImage")
-        console.log(imageSize)
-
         const canvas = canvasRef.current;
         const image = imageRef.current;
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-
-        console.log(canvas)
-        console.log(image)
     }
 
     const drawRect = (label, rectCoords) => {
-        console.log("drawRect");
         let canvas = canvasRef.current;
         let ctx = canvas.getContext('2d');
 
@@ -154,20 +143,17 @@ export default function Label() {
     }
 
     const drawRects = () => {
-        console.log("drawRects");
         if (rectCoordsArray.length == 0)
             return;
 
         for (let index = 0; index < rectCoordsArray.length; index++) {
             const rect = rectCoordsArray[index];
             const label = labels[index];
-            console.log(label, rect)
             drawRect(label, rect);
         }
     }
 
     const initData = () => {
-        console.log("Init Data")
         const labels = service.getLabels();
         setColDefsWithParas(labels);
         setOptions(labels)
@@ -183,7 +169,6 @@ export default function Label() {
     }, [])
 
     const handleMouseDown = (event) => {
-        console.log("handleMouseDown")
 
         if (newMode) {
             const canvas = canvasRef.current;
@@ -234,7 +219,7 @@ export default function Label() {
                 x: boundingBox.x,
                 y: boundingBox.y,
                 width: boundingBox.width,
-                height: boundingBox.height
+                height: boundingBox.height,
             }
         ];
 
@@ -242,15 +227,12 @@ export default function Label() {
     };
 
     const handleMouseUp = () => {
-        console.log("handleMouseUp")
 
         if (bounding) {
             const boundingBox = getBoundingBox();
             rectCoordsArray.push(boundingBox)
             labels.push(selectedOption)
-            console.log(rectCoordsArray)
             addRowData(selectedOption, boundingBox);
-            console.log(rowData);
 
             drawImage();
             drawRects();
@@ -265,10 +247,8 @@ export default function Label() {
     };
 
     const handleMouseMove = (event) => {
-        console.log("handleMouseMove");
 
         if (bounding) {
-            console.log("bounding")
             const canvas = canvasRef.current;
             const rect = canvas.getBoundingClientRect();
             const offsetX = event.clientX - rect.left;
@@ -281,7 +261,6 @@ export default function Label() {
         }
 
         if (dragging) {
-            console.log("dragging")
             const deltaX = event.clientX - startPosition.x;
             const deltaY = event.clientY - startPosition.y;
             setRectCoords({
@@ -293,7 +272,6 @@ export default function Label() {
         }
 
         else if (resizing) {
-            console.log("resizing")
 
             const deltaX = event.clientX - startPosition.x;
             const deltaY = event.clientY - startPosition.y;
@@ -330,7 +308,6 @@ export default function Label() {
         const { x: startX, y: startY } = startPosition;
         const { x: currentX, y: currentY } = currentPosition;
 
-        console.log(startX, startY, currentX - startX, currentY - startY);
 
         // [todo] check if over image border
         ctx.beginPath();
@@ -385,10 +362,11 @@ export default function Label() {
                 </div>
             </div>
             <hr />
-            <div style={{ display: 'flex', justifyContent: 'space-between', height: '550px' }}>
+            {/* Main Area */}
+            <div style={{ borderLeft: '1px solid #BDBDBD', borderBottom: '1px solid #BDBDBD', display: 'flex', justifyContent: 'space-between', height: '550px' }}>
 
                 < div style={{ width: '550px' }}>
-                    <p style={{ textAlign: 'center', margin: '0px', border: '1px solid #BDBDBD', fontSize: "18px" }}>cat.png</p >
+                    <p style={{ textAlign: 'center', margin: '0px', fontSize: "18px" }}>cat.png</p >
 
                     {/* Canvas */}
                     <div style={{ margin: '0px', backgroundColor: '#F3F3F3' }}>
@@ -411,10 +389,10 @@ export default function Label() {
                 </div>
 
                 {/* Tables */}
-                <div style={{ border: '1px solid #BDBDBD', marginLeft: '3px', marginRight: 'auto' }}>
+                <div style={{ borderLeft: '1px solid #BDBDBD', marginRight: 'auto' }}>
                     <div style={{ marginLeft: '5px' }}>
-                        <p style={{ margin: '0px', border: '1px solid #BDBDBD', fontSize: "18px" }}>Labels</p>
-                        <div className={"ag-theme-quartz"} style={{ width: '550px', height: '230px' }}>
+                        <p style={{ margin: '0px', fontSize: "18px" }}>Labels</p>
+                        <div className={"ag-theme-quartz"} style={{ width: '550px', height: '200px' }}>
                             <AgGridReact
                                 rowData={rowData}
                                 columnDefs={colDefs}
@@ -422,7 +400,7 @@ export default function Label() {
                                 onCellValueChanged={cellChangedEvent}
                             />
                         </div>
-                        <p style={{ marginTop: '10px', marginBottom: '0px', border: '1px solid #BDBDBD', fontSize: "18px" }}>Images</p>
+                        <p style={{ marginTop: '10px', marginBottom: '0px', fontSize: "18px" }}>Images</p>
                         <div className={"ag-theme-quartz"} style={{ width: '550px', height: '300px' }}>
                             <AgGridReact
                                 rowData={imageRowData}
