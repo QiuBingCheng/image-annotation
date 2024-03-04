@@ -23,23 +23,29 @@ export default function Label() {
     const [rowData, setRowData] = useState([]);
 
     const CustomCellRenderer = (props) => {
+        console.log("CustomCellRenderer")
+        const rowData = props.forEachNode().rows.map(row => row.data);
+        console.log(rowData)
         const deleteRow = () => {
             console.log("deleteRow")
             props.api.applyTransaction({ remove: [props.node.data] });
+            handleDeleteClick(props.node.data.id)
         };
 
         return <button style={{ background: 'transparent', border: 'none' }}> <img src="./images/delete.png" style={{ height: '20px', width: '20px' }} onClick={deleteRow} /></button>;
     };
 
     const handleDeleteClick = (rowId) => {
+        console.log("handleDeleteClick")
         rectCoordsArray.splice(rowId - 1, 1);
-        handleRemoveRow(rowId);
+        console.log(rectCoordsArray)
         handleReorderIDs();
         drawImage()
         drawRects()
     };
 
     const handleReorderIDs = () => {
+        console.log("handleReorderIDs")
         const reorderedRows = rowData.map((row, index) => ({ ...row, id: index + 1 }));
         setRowData(reorderedRows);
     };
