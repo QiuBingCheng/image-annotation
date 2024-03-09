@@ -28,7 +28,7 @@ export default function Home() {
         console.log("uploadFiles")
         console.log(files)
         console.log(name)
-        return
+
         const formData = new FormData();
         for (let i = 0; i < files.length; i++) {
             formData.append('files', files[i]);

@@ -11,7 +11,10 @@ let rectCoordsArray = [];
 let labels = [];
 
 export default function Label() {
-    const canvasRef = useRef(null);
+    const imageCanvasRef = useRef(null);
+    const rectCanvasRef = useRef(null);
+    const cursorCanvasRef = useRef(null);
+
     const imageRef = useRef(null);
 
     //=========== Data Grid ===========//
@@ -24,7 +27,6 @@ export default function Label() {
 
     const CustomCellRenderer = (props) => {
         console.log("CustomCellRenderer")
-        const rowData = props.forEachNode().rows.map(row => row.data);
         console.log(rowData)
         const deleteRow = () => {
             console.log("deleteRow")
@@ -122,7 +124,7 @@ export default function Label() {
     };
 
     const drawImage = () => {
-        const canvas = canvasRef.current;
+        const canvas = imageCanvasRef.current;
         const image = imageRef.current;
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -130,7 +132,7 @@ export default function Label() {
     }
 
     const drawRect = (label, rectCoords) => {
-        let canvas = canvasRef.current;
+        let canvas = rectCanvasRef.current;
         let ctx = canvas.getContext('2d');
 
         ctx.beginPath();
@@ -139,8 +141,7 @@ export default function Label() {
         ctx.lineWidth = 1;
         ctx.stroke();
 
-        //
-        canvas = canvasRef.current;
+        canvas = rectCanvasRef.current;
         ctx = canvas.getContext('2d');
         ctx.fillStyle = 'green';
         ctx.font = '16px Arial';
@@ -177,7 +178,7 @@ export default function Label() {
     const handleMouseDown = (event) => {
 
         if (newMode) {
-            const canvas = canvasRef.current;
+            const canvas = imageCanvasRef.current;
             const rect = canvas.getBoundingClientRect();
             const offsetX = event.clientX - rect.left;
             const offsetY = event.clientY - rect.top;
@@ -233,15 +234,14 @@ export default function Label() {
     };
 
     const handleMouseUp = () => {
+        console.log("handleMouseUp")
 
         if (bounding) {
             const boundingBox = getBoundingBox();
             rectCoordsArray.push(boundingBox)
+
             labels.push(selectedOption)
             addRowData(selectedOption, boundingBox);
-
-            drawImage();
-            drawRects();
         }
 
         // initial
@@ -252,21 +252,60 @@ export default function Label() {
         setBounding(false);
     };
 
+    const cursorMove = (event) => {
+        console.log("cursorMove")
+
+        const canvas = cursorCanvasRef.current;
+        const ctx = canvas.getContext('2d');
+
+        const rect = canvas.getBoundingClientRect(); // 获取 Canvas 元素相对于视口的位置和大小
+        const mouseX = event.clientX - rect.left; // 鼠标相对于 Canvas 左上角的横坐标
+        const mouseY = event.clientY - rect.top; // 鼠标相对于 Canvas 左上角的纵坐标
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        console.log(mouseX, mouseY)
+        if (mouseX <= 0 || mouseX >= imageSize.width - 10 || mouseY <= 0 || mouseY >= imageSize.height - 10)
+            return
+
+        ctx.lineWidth = 1; // 设置线宽为 3 像素
+        // 绘制水平方向的虚线
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(0, mouseY); // 虚线起点为 Canvas 左边缘，鼠标纵坐标
+        ctx.lineTo(canvas.width, mouseY); // 虚线终点为 Canvas 右边缘，鼠标纵坐标
+        ctx.stroke();
+
+        // 绘制垂直方向的虚线
+        ctx.beginPath();
+        ctx.moveTo(mouseX, 0); // 虚线起点为鼠标横坐标，Canvas 上边缘
+        ctx.lineTo(mouseX, canvas.height); // 虚线终点为鼠标横坐标，Canvas 下边缘
+        ctx.stroke();
+    }
+
     const handleMouseMove = (event) => {
 
+        if (newMode) {
+            cursorMove(event)
+        }
+
         if (bounding) {
-            const canvas = canvasRef.current;
+
+            const canvas = rectCanvasRef.current;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
             const rect = canvas.getBoundingClientRect();
             const offsetX = event.clientX - rect.left;
             const offsetY = event.clientY - rect.top;
             setCurrentPosition({ x: offsetX, y: offsetY });
-            drawImage();
+
             drawRects();
             drawBoundingBox();
             return;
         }
 
-        if (dragging) {
+        else if (dragging) {
             const deltaX = event.clientX - startPosition.x;
             const deltaY = event.clientY - startPosition.y;
             setRectCoords({
@@ -309,11 +348,12 @@ export default function Label() {
     };
 
     const drawBoundingBox = () => {
-        const canvas = canvasRef.current;
+        console.log("drawBoundingBox")
+
+        const canvas = rectCanvasRef.current;
         const ctx = canvas.getContext('2d');
         const { x: startX, y: startY } = startPosition;
         const { x: currentX, y: currentY } = currentPosition;
-
 
         // [todo] check if over image border
         ctx.beginPath();
@@ -339,6 +379,8 @@ export default function Label() {
 
     return (
         <div>
+            {/* Cursor Line */}
+
             {/* Function area */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
 
@@ -375,14 +417,28 @@ export default function Label() {
                     <p style={{ textAlign: 'center', margin: '0px', fontSize: "18px" }}>cat.png</p >
 
                     {/* Canvas */}
-                    <div style={{ margin: '0px', backgroundColor: '#F3F3F3' }}>
+                    <div style={{ position: 'relative', margin: '0px', backgroundColor: '#F3F3F3' }}>
                         <canvas
-                            ref={canvasRef}
+                            ref={imageCanvasRef}
+                            width={imageSize.width}
+                            height={imageSize.height}
+                            style={{ position: 'absolute', top: 0, left: 0 }}
+                        />
+
+                        <canvas
+                            ref={rectCanvasRef}
+                            width={imageSize.width}
+                            height={imageSize.height}
+                            style={{ position: 'absolute', top: 0, left: 0 }}
+                        />
+                        <canvas
+                            ref={cursorCanvasRef}
                             width={imageSize.width}
                             height={imageSize.height}
                             onMouseDown={handleMouseDown}
                             onMouseUp={handleMouseUp}
                             onMouseMove={handleMouseMove}
+                            style={{ position: 'absolute', top: 0, left: 0 }}
                         />
                         <img
                             ref={imageRef}

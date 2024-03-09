@@ -3,7 +3,7 @@
 
 /react-project/node_modules
 /fastapi/env
-
+*.pyc
 # testing
 /coverage
 
