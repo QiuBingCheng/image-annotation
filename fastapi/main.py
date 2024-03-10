@@ -25,6 +25,7 @@ def read_item(item_id: int, q: Union[str, None] = None):
 
 
 @app.post("/uploadfile")
-async def create_upload_file(files: List[UploadFile]):
+async def create_upload_file(name: str = Form(...), files: List[UploadFile] = File(...)):
     print(files)
+    print(name)
     return [file.filename for file in files]
