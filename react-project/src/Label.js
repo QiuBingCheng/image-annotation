@@ -13,7 +13,6 @@ let labels = [];
 export default function Label() {
     const imageCanvasRef = useRef(null);
     const rectCanvasRef = useRef(null);
-    const cursorCanvasRef = useRef(null);
 
     const imageRef = useRef(null);
 
@@ -111,6 +110,8 @@ export default function Label() {
     // labeled rect
     const [startPosition, setStartPosition] = useState({ x: 0, y: 0 });
     const [currentPosition, setCurrentPosition] = useState({ x: 0, y: 0 });
+    const [showCursor, setShowCursor] = useState(false)
+
 
     const handleSelectChange = (event) => {
 
@@ -252,57 +253,22 @@ export default function Label() {
         setBounding(false);
     };
 
-    const cursorMove = (event) => {
-        console.log("cursorMove")
-
-        const canvas = cursorCanvasRef.current;
-        const ctx = canvas.getContext('2d');
-
-        const rect = canvas.getBoundingClientRect(); // 获取 Canvas 元素相对于视口的位置和大小
-        const mouseX = event.clientX - rect.left; // 鼠标相对于 Canvas 左上角的横坐标
-        const mouseY = event.clientY - rect.top; // 鼠标相对于 Canvas 左上角的纵坐标
-
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        console.log(mouseX, mouseY)
-        if (mouseX <= 0 || mouseX >= imageSize.width - 10 || mouseY <= 0 || mouseY >= imageSize.height - 10)
-            return
-
-        ctx.lineWidth = 1; // 设置线宽为 3 像素
-        // 绘制水平方向的虚线
-        ctx.setLineDash([5, 5]);
-        ctx.beginPath();
-        ctx.moveTo(0, mouseY); // 虚线起点为 Canvas 左边缘，鼠标纵坐标
-        ctx.lineTo(canvas.width, mouseY); // 虚线终点为 Canvas 右边缘，鼠标纵坐标
-        ctx.stroke();
-
-        // 绘制垂直方向的虚线
-        ctx.beginPath();
-        ctx.moveTo(mouseX, 0); // 虚线起点为鼠标横坐标，Canvas 上边缘
-        ctx.lineTo(mouseX, canvas.height); // 虚线终点为鼠标横坐标，Canvas 下边缘
-        ctx.stroke();
-    }
-
     const handleMouseMove = (event) => {
 
         if (newMode) {
-            cursorMove(event)
-        }
-
-        if (bounding) {
-
             const canvas = rectCanvasRef.current;
-            const ctx = canvas.getContext('2d');
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
             const rect = canvas.getBoundingClientRect();
             const offsetX = event.clientX - rect.left;
             const offsetY = event.clientY - rect.top;
-            setCurrentPosition({ x: offsetX, y: offsetY });
+            const currentPoint = { x: offsetX, y: offsetY }
+            setCurrentPosition(currentPoint);
 
-            drawRects();
-            drawBoundingBox();
-            return;
+            if (bounding) {
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                drawRects();
+                drawBoundingBox();
+            }
         }
 
         else if (dragging) {
@@ -334,11 +300,13 @@ export default function Label() {
     const BoundingTrigger = (event) => {
         setNewMode(true);
         setEditMode(false);
+        setShowCursor(true)
     }
 
     const EditTrigger = (event) => {
         setNewMode(false);
         setEditMode(true);
+        setShowCursor(false)
     }
 
     const onRowClicked = (event) => {
@@ -429,12 +397,6 @@ export default function Label() {
                             ref={rectCanvasRef}
                             width={imageSize.width}
                             height={imageSize.height}
-                            style={{ position: 'absolute', top: 0, left: 0 }}
-                        />
-                        <canvas
-                            ref={cursorCanvasRef}
-                            width={imageSize.width}
-                            height={imageSize.height}
                             onMouseDown={handleMouseDown}
                             onMouseUp={handleMouseUp}
                             onMouseMove={handleMouseMove}
@@ -447,6 +409,25 @@ export default function Label() {
                             onLoad={handleImageLoad}
                             style={{ display: 'none' }}
                         />
+
+                        {showCursor &&
+                            <svg style={{ position: 'absolute', width: imageSize.width, height: imageSize.height, top: 0, left: 0, zIndex: 9999, pointerEvents: 'none' }}>
+                                <line
+                                    x1={currentPosition.x}
+                                    y1={0}
+                                    x2={currentPosition.x}
+                                    y2={imageSize.height}
+                                    style={{ stroke: 'gray', strokeWidth: 1, strokeDasharray: '5, 5' }}
+                                />
+                                <line
+                                    x1={0}
+                                    y1={currentPosition.y}
+                                    x2={imageSize.width}
+                                    y2={currentPosition.y}
+                                    style={{ stroke: 'gray', strokeWidth: 1, strokeDasharray: '5, 5' }}
+                                />
+                            </svg>}
+
                     </div>
                 </div>
 
