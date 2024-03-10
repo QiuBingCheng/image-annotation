@@ -12,9 +12,6 @@ export default function Home() {
 
     const handleSubmit = (event) => {
         event.preventDefault(); // 取消表單提交行為
-        console.log(event)
-        console.log(event.target.elements)
-
         const form = document.getElementById("form");
         const formData = new FormData(form);
         uploadFilesAPI(formData)
@@ -22,19 +19,18 @@ export default function Home() {
 
     const uploadFilesAPI = async (formData) => {
         try {
-            console.log(formData)
             const response = await fetch('http://127.0.0.1:8000/uploadfile', {
                 method: 'POST',
                 body: formData
             });
-            console.log(response)
+
+            const data = await response.json();
+            console.log(data)
 
             if (!response.ok) {
                 throw new Error('上传文件失败');
             }
 
-            const data = await response.json();
-            console.log('文件大小:', data.file_size);
         } catch (error) {
             console.error('发生错误:', error.message);
         }

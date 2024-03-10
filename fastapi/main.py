@@ -45,4 +45,4 @@ async def create_upload_file(name: str = Form(...), files: List[UploadFile] = Fi
     await dataset_maker.save_images(name, files)
     e_time = time.perf_counter()
 
-    return {"status": "ok", "time": e_time-s_time}
+    return {"status": "ok", "time": f"{e_time-s_time:.2f}s"}

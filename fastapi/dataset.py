@@ -31,7 +31,7 @@ class DatasetMaker:
             savefile_name = f"{no:05d}.{ext}"
 
             print(
-                f"Received file: {file_name} ({savefile_name}), Size: {file_size} MB")
+                f"Received file: {file_name} ({savefile_name}), Size: {file_size:.2f} MB")
 
             file_path = os.path.join(images_path, savefile_name)
             print(f"Saving {file_path}")
